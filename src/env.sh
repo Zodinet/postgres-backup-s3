@@ -3,10 +3,10 @@ if [ -z "$S3_BUCKET" ]; then
   exit 1
 fi
 
-if [ -z "$POSTGRES_DATABASE" ]; then
-  echo "You need to set the POSTGRES_DATABASE environment variable."
-  exit 1
-fi
+#if [ -z "$POSTGRES_DATABASE" ]; then
+#  echo "You need to set the POSTGRES_DATABASE environment variable."
+#  exit 1
+#fi
 
 if [ -z "$POSTGRES_HOST" ]; then
   # https://docs.docker.com/network/links/#environment-variables
