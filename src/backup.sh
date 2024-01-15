@@ -6,22 +6,21 @@ set -o pipefail
 source ./env.sh
 
 echo "Creating backup of $POSTGRES_DATABASE database..."
-if [ -n "$POSTGRES_DATABASE" ]; then
-  pg_dump --format=custom \
+DATABASES_FROM_ENV="$POSTGRES_DATABASE"
+DB_OPTIONS=""
+IFS=,
+for DB in $DATABASES_FROM_ENV; do
+    DB_OPTIONS="$DB_OPTIONS -d $DB"
+done
+
+echo "Creating backup of $POSTGRES_DATABASE database..."
+pg_dump --format=custom \
         -h $POSTGRES_HOST \
         -p $POSTGRES_PORT \
         -U $POSTGRES_USER \
-        -d $POSTGRES_DATABASE \
+        $DB_OPTIONS \
         $PGDUMP_EXTRA_OPTS \
         > db.dump
-else
-  pg_dumpall \
-        -h $POSTGRES_HOST \
-        -p $POSTGRES_PORT \
-        -U $POSTGRES_USER \
-        $PGDUMP_EXTRA_OPTS \
-        > db.dump
-fi
 
 timestamp=$(date +"%Y-%m-%dT%H:%M:%S")
 s3_uri_base="s3://${S3_BUCKET}/${S3_PREFIX}/${POSTGRES_DATABASE}_${timestamp}.dump"
