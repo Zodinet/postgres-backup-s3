@@ -14,13 +14,14 @@ for DB in $DATABASES_FROM_ENV; do
 done
 
 echo "Creating backup of $POSTGRES_DATABASE database..."
-pg_dump --format=custom \
-        -h $POSTGRES_HOST \
-        -p $POSTGRES_PORT \
-        -U $POSTGRES_USER \
-        $DB_OPTIONS \
-        $PGDUMP_EXTRA_OPTS \
-        > db.dump
+IFS=,
+for DB in $DATABASES_FROM_ENV; do
+    DB_OPTIONS="$DB_OPTIONS -d $DB"
+done
+
+SCRIPT="pg_dump --format=custom -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER         $DB_OPTIONS > db.dump"
+
+eval $SCRIPT
 
 timestamp=$(date +"%Y-%m-%dT%H:%M:%S")
 s3_uri_base="s3://${S3_BUCKET}/${S3_PREFIX}/${POSTGRES_DATABASE}_${timestamp}.dump"
