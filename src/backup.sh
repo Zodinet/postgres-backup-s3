@@ -15,7 +15,7 @@ if [ -n "$POSTGRES_DATABASE" ]; then
         $PGDUMP_EXTRA_OPTS \
         > db.dump
 else
-  pg_dumpall --format=custom \
+  pg_dumpall \
         -h $POSTGRES_HOST \
         -p $POSTGRES_PORT \
         -U $POSTGRES_USER \
