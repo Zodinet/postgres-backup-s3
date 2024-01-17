@@ -1,4 +1,6 @@
-FROM webdevops/go-crond:master-alpine
+ARG ALPINE_VERSION
+FROM alpine:${ALPINE_VERSION}
+
 LABEL maintainer="Linh Ho <linh@zodinet.com>"
 
 ADD install.sh install.sh
