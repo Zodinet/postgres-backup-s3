@@ -2,6 +2,7 @@ ARG ALPINE_VERSION
 FROM alpine:${ALPINE_VERSION}
 
 LABEL maintainer="Linh Ho <linh@zodinet.com>"
+ARG TARGETARCH
 
 ADD install.sh install.sh
 RUN sh install.sh && rm install.sh
