@@ -11,9 +11,11 @@ apk add --no-cache openssl postgresql-client curl bash make py-pip
 # Install AWS CLI for S3
 apk add --no-cache aws-cli
 
-apk add --virtual=build gcc libffi-dev musl-dev openssl-dev python2-dev
+apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo make
 
-pip install azure-cli
+pip install --break-system-packages --upgrade pip setuptools
+
+pip install --break-system-packages azure-cli
 
 apk del --purge build
 
