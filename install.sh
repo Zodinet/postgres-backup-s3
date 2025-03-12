@@ -17,8 +17,6 @@ pip install --break-system-packages --upgrade pip setuptools
 
 pip install --break-system-packages azure-cli
 
-apk del --purge build
-
 # Install go-cron for scheduled backups
 curl -L https://github.com/ivoronin/go-cron/releases/download/v0.0.5/go-cron_0.0.5_linux_${TARGETARCH}.tar.gz -O
 tar xvf go-cron_0.0.5_linux_${TARGETARCH}.tar.gz
