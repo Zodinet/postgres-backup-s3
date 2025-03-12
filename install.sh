@@ -6,19 +6,16 @@ set -eo pipefail
 apk update
 
 # Install common dependencies
-apk add --no-cache openssl postgresql-client curl
+apk add --no-cache openssl postgresql-client curl bash make py-pip
 
 # Install AWS CLI for S3
 apk add --no-cache aws-cli
 
- apk update && apk add --no-cache \
-    curl \
-    bash \
-    jq \
-    ca-certificates \
-    && update-ca-certificates
+apk add --virtual=build gcc libffi-dev musl-dev openssl-dev python2-dev
 
-curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+pip install azure-cli
+
+apk del --purge build
 
 # Install go-cron for scheduled backups
 curl -L https://github.com/ivoronin/go-cron/releases/download/v0.0.5/go-cron_0.0.5_linux_${TARGETARCH}.tar.gz -O
