@@ -11,10 +11,14 @@ apk add --no-cache openssl postgresql-client curl
 # Install AWS CLI for S3
 apk add --no-cache aws-cli
 
-# Install Azure CLI dependencies and the CLI itself
-apk add --no-cache py3-pip
-apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo make
-pip install azure-cli
+ apk update && apk add --no-cache \
+    curl \
+    bash \
+    jq \
+    ca-certificates \
+    && update-ca-certificates
+
+curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 # Install go-cron for scheduled backups
 curl -L https://github.com/ivoronin/go-cron/releases/download/v0.0.5/go-cron_0.0.5_linux_${TARGETARCH}.tar.gz -O
