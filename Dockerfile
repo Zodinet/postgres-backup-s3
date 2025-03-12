@@ -1,7 +1,7 @@
 ARG ALPINE_VERSION
 FROM alpine:${ALPINE_VERSION}
 
-LABEL maintainer="Your Name <your.email@example.com>"
+LABEL maintainer="Linh Ho <linh@zodinet.com>"
 ARG TARGETARCH
 
 # Create provider directory

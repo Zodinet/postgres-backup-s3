@@ -6,13 +6,7 @@ set -eo pipefail
 apk update
 
 # Install common dependencies
-apk add --no-cache openssl postgresql-client curl
-
-# Install AWS CLI for S3
-apk add --no-cache aws-cli
-
-# Install Azure CLI dependencies and the CLI itself
-apk add --no-cache ca-certificates py3-pip
+apk add --no-cache openssl postgresql-client curl  gcc musl-dev python3-dev libffi-dev openssl-dev cargo make  aws-cli
 pip install --upgrade pip
 pip install azure-cli
 
