@@ -14,7 +14,6 @@ apk add --no-cache aws-cli
 # Install Azure CLI dependencies and the CLI itself
 apk add --no-cache py3-pip
 apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo make
-pip install --upgrade pip
 pip install azure-cli
 
 # Install go-cron for scheduled backups
