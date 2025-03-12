@@ -1,8 +1,24 @@
-# Introduction
-This project provides Docker images to periodically back up a PostgreSQL database to AWS S3, and to restore from the backup as needed.
+# PostgreSQL Backup with Multi-Provider Support
 
-# Usage
-## Backup
+This project provides Docker images to periodically back up a PostgreSQL database to either AWS S3 or Azure Blob Storage, and to restore from the backup as needed.
+
+## Supported Storage Providers
+
+- **AWS S3**: The original storage provider, including support for S3-compatible services
+- **Azure Blob Storage**: Added support for Microsoft Azure's blob storage service
+
+## Usage
+
+### Configuration
+
+First, choose your storage provider by setting the `STORAGE_PROVIDER` environment variable:
+- `s3` for AWS S3 (default)
+- `azure` for Azure Blob Storage
+
+Then configure the provider-specific environment variables.
+
+### Docker Compose Example
+
 ```yaml
 services:
   postgres:
@@ -12,71 +28,108 @@ services:
       POSTGRES_PASSWORD: password
 
   backup:
-    image: eeshugerman/postgres-backup-s3:16
+    image: zodinettech/postgres-backup-s3:16
     environment:
-      SCHEDULE: '@weekly'     # optional
-      BACKUP_KEEP_DAYS: 7     # optional
-      PASSPHRASE: passphrase  # optional
-      S3_REGION: region
-      S3_ACCESS_KEY_ID: key
-      S3_SECRET_ACCESS_KEY: secret
-      S3_BUCKET: my-bucket
-      S3_PREFIX: backup
+      # Common settings
+      STORAGE_PROVIDER: s3  # or 'azure'
+      SCHEDULE: '@weekly'
+      BACKUP_KEEP_DAYS: 7
+      ENCRYPTION_PASSWORD: passphrase  # optional
+      
+      # PostgreSQL settings
       POSTGRES_HOST: postgres
       POSTGRES_DATABASE: dbname
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+      
+      # S3-specific settings (if STORAGE_PROVIDER=s3)
+      S3_REGION: us-west-1
+      S3_ACCESS_KEY_ID: your-access-key
+      S3_SECRET_ACCESS_KEY: your-secret-key
+      S3_BUCKET: your-bucket
+      S3_PREFIX: backups
+      
+      # Azure-specific settings (if STORAGE_PROVIDER=azure)
+      AZURE_STORAGE_ACCOUNT: your-account
+      AZURE_STORAGE_KEY: your-key
+      AZURE_CONTAINER: your-container
+      AZURE_PREFIX: backups
 ```
 
-- Images are tagged by the major PostgreSQL version supported: `12`, `13`, `14`, `15` or `16`.
-- The `SCHEDULE` variable determines backup frequency. See go-cron schedules documentation [here](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules). Omit to run the backup immediately and then exit.
-- If `PASSPHRASE` is provided, the backup will be encrypted using GPG.
-- Run `docker exec <container name> sh backup.sh` to trigger a backup ad-hoc.
-- If `BACKUP_KEEP_DAYS` is set, backups older than this many days will be deleted from S3.
-- Set `S3_ENDPOINT` if you're using a non-AWS S3-compatible storage provider.
+### Backup
 
-## Restore
+- The `SCHEDULE` variable determines backup frequency using cron syntax. Omit to run backup immediately and exit.
+- If `ENCRYPTION_PASSWORD` is provided, the backup will be encrypted using OpenSSL AES-256-CBC encryption.
+- Run `docker exec <container name> sh backup.sh` to trigger a backup ad-hoc.
+- If `BACKUP_KEEP_DAYS` is set, backups older than this many days will be deleted.
+
+### Restore
+
 > **WARNING:** DATA LOSS! All database objects will be dropped and re-created.
-### ... from latest backup
+
+#### ... from latest backup
 ```sh
 docker exec <container name> sh restore.sh
 ```
-> **NOTE:** If your bucket has more than a 1000 files, the latest may not be restored -- only one S3 `ls` command is used
-### ... from specific backup
+
+#### ... from specific backup
 ```sh
 docker exec <container name> sh restore.sh <timestamp>
 ```
 
-# Development
-## Build the image locally
-`ALPINE_VERSION` determines Postgres version compatibility. See [`build-and-push-images.yml`](.github/workflows/build-and-push-images.yml) for the latest mapping.
+## Environment Variables
+
+### Common Variables
+- `STORAGE_PROVIDER`: Storage provider to use (`s3` or `azure`, defaults to `s3`)
+- `POSTGRES_HOST`: PostgreSQL server hostname
+- `POSTGRES_PORT`: PostgreSQL server port (default: 5432)
+- `POSTGRES_USER`: PostgreSQL username
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DATABASE`: PostgreSQL database name
+- `POSTGRES_BACKUP_ALL`: Set to "true" to backup all databases
+- `POSTGRES_EXTRA_OPTS`: Additional options for pg_dump
+- `BACKUP_FILE_NAME`: Custom filename for the backup
+- `SCHEDULE`: Cron schedule for automatic backups
+- `ENCRYPTION_PASSWORD`: Password for backup encryption
+- `BACKUP_KEEP_DAYS`: Number of days to keep backups before deletion
+
+### S3-specific Variables
+- `S3_ACCESS_KEY_ID`: AWS access key
+- `S3_SECRET_ACCESS_KEY`: AWS secret key
+- `S3_BUCKET`: S3 bucket name
+- `S3_PREFIX`: Prefix for backup files in S3
+- `S3_REGION`: AWS region (default: us-west-1)
+- `S3_ENDPOINT`: Custom endpoint for S3-compatible services
+- `S3_S3V4`: Set to "yes" to use signature version 4
+
+### Azure-specific Variables
+- `AZURE_STORAGE_ACCOUNT`: Azure Storage account name
+- `AZURE_STORAGE_KEY`: Azure Storage account key
+- `AZURE_CONTAINER`: Azure Storage container name
+- `AZURE_PREFIX`: Prefix for backup files in Azure Blob Storage
+
+## Development
+
+### Build the image locally
+
 ```sh
-DOCKER_BUILDKIT=1 docker build --build-arg ALPINE_VERSION=3.14 .
+DOCKER_BUILDKIT=1 docker build --build-arg ALPINE_VERSION=3.20 .
 ```
-## Run a simple test environment with Docker Compose
+
+### Run a simple test environment with Docker Compose
+
 ```sh
 cp template.env .env
 # fill out your secrets/params in .env
 docker compose up -d
 ```
 
-# Acknowledgements
-This project is a fork and re-structuring of @schickling's [postgres-backup-s3](https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3) and [postgres-restore-s3](https://github.com/schickling/dockerfiles/tree/master/postgres-restore-s3).
+## Features
 
-## Fork goals
-These changes would have been difficult or impossible merge into @schickling's repo or similarly-structured forks.
-  - dedicated repository
-  - automated builds
-  - support multiple PostgreSQL versions
-  - backup and restore with one image
-
-## Other changes and features
-  - some environment variables renamed or removed
-  - uses `pg_dump`'s `custom` format (see [docs](https://www.postgresql.org/docs/10/app-pgdump.html))
-  - drop and re-create all database objects on restore
-  - backup blobs and all schemas by default
-  - no Python 2 dependencies
-  - filter backups on S3 by database name
-  - support encrypted (password-protected) backups
-  - support for restoring from a specific backup by timestamp
-  - support for auto-removal of old backups
+- Support for multiple storage providers (AWS S3, Azure Blob Storage)
+- Automated, scheduled backups
+- Encrypted backups
+- Automatic cleanup of old backups
+- Support for multiple PostgreSQL versions
+- Backup of specific databases or all databases
+- Restore capability from any backup
